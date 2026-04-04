@@ -400,3 +400,24 @@ async def page_history(request: Request, page: int = 1):
     ctx = _page_context(request)
     ctx.update({"history": history, "page": page, "total_pages": total_pages})
     return templates.TemplateResponse(request, name="history.html", context=ctx)
+
+
+# Code to recover stuck images when the app restarts
+
+class WorkerQueue:
+    def __init__(self):
+        # Current initialization code
+        self.reset_stuck_images()
+
+    def reset_stuck_images(self):
+        """Reset images stuck in processing state to pending."""
+        stuck_images = self.get_images_with_status('processing')
+        for image in stuck_images:
+            image.status = 'pending'
+            image.save()
+
+    def get_images_with_status(self, status):
+        # Dummy implementation, this should interact with your image storage mechanism
+        return []  # Return images based on status
+
+# The WorkerQueue class should be instantiated during the app's startup process
