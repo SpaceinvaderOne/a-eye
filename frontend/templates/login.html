@@ -4,87 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - A-Eye</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=64">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css?v=nocturne1">
     <style>
         .login-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 2rem;
+            padding: var(--space-6);
         }
         .login-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 2.5rem;
+            position: relative;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: var(--space-10) var(--space-8);
             width: 100%;
-            max-width: 380px;
-            box-shadow: var(--shadow);
+            max-width: 400px;
+            box-shadow: var(--shadow-modal);
+        }
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: var(--space-6);
+            right: var(--space-6);
+            height: 1px;
+            background: var(--accent);
+            opacity: 0.9;
         }
         .login-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: var(--space-8);
         }
         .login-header img {
             display: block;
-            margin: 0 auto 0.75rem;
+            margin: 0 auto var(--space-3);
         }
         .login-header h1 {
-            font-size: 1.5rem;
-            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-muted);
             margin: 0;
         }
         .login-field {
-            margin-bottom: 1.25rem;
+            margin-bottom: var(--space-4);
         }
         .login-field label {
             display: block;
-            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
             color: var(--text-muted);
-            margin-bottom: 0.4rem;
+            margin-bottom: var(--space-2);
         }
         .login-field input {
             width: 100%;
-            padding: 0.6rem 0.75rem;
+            padding: 0.65rem 0.85rem;
             background: var(--bg-input);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-strong);
             border-radius: var(--radius-sm);
             color: var(--text);
-            font-size: 0.95rem;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color var(--dur) var(--ease),
+                        box-shadow var(--dur) var(--ease),
+                        background var(--dur) var(--ease);
         }
         .login-field input:focus {
-            border-color: var(--primary);
+            border-color: var(--accent);
+            background: var(--bg-elevated);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
         .login-btn {
             width: 100%;
-            padding: 0.7rem;
-            background: var(--primary);
-            color: #fff;
-            border: none;
+            margin-top: var(--space-2);
+            padding: 0.75rem;
+            background: var(--accent);
+            color: var(--accent-ink);
+            border: 1px solid var(--accent);
             border-radius: var(--radius-sm);
-            font-size: 0.95rem;
-            font-weight: 500;
+            font-family: var(--font-display);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background var(--dur) var(--ease),
+                        border-color var(--dur) var(--ease);
         }
         .login-btn:hover {
             background: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
         .login-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
         }
         .login-error {
-            background: rgba(245, 91, 91, 0.1);
-            border: 1px solid var(--error);
+            background: var(--error-bg);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--error);
             color: var(--error);
-            padding: 0.6rem 0.75rem;
+            padding: 0.6rem 0.85rem;
             border-radius: var(--radius-sm);
-            font-size: 0.85rem;
-            margin-bottom: 1.25rem;
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            margin-bottom: var(--space-4);
             display: none;
         }
     </style>

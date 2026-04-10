@@ -138,6 +138,8 @@ function updateDashboard() {
         .then(data => {
             const stats = data.stats || {};
             const outcomes = data.outcomes || {};
+            const w = data.worker || {};
+            const p = data.progress || {};
 
             // Top row
             _setText('stat-total', stats.total || 0);
@@ -162,7 +164,6 @@ function updateDashboard() {
             }
 
             // Toggle idle/active progress sections
-            const p = data.progress || {};
             var isActive = (stats.pending || 0) + (stats.processing || 0) > 0;
             var progressActive = document.getElementById('progress-active');
             var progressIdle = document.getElementById('progress-idle');
@@ -224,7 +225,6 @@ function updateDashboard() {
             updateScheduleStatus(data);
 
             // Update worker status
-            const w = data.worker || {};
             var workerLabel = w.running ? 'Active' : 'Stopped';
             if (w.paused) workerLabel = 'Paused (scheduled)';
             _setText('worker-running', workerLabel);
@@ -240,7 +240,7 @@ function updateDashboard() {
             // Photo Showcase
             _initShowcase();
         })
-        .catch(() => {}); // silently ignore network errors
+        .catch(err => { if (err && err.name !== 'TypeError') console.error('updateDashboard failed:', err); });
 }
 
 function _applyKenBurns(imgEl, gridEl) {
@@ -1179,8 +1179,18 @@ function contextModalOk() {
 }
 
 function contextModalSkip() {
+    // "Keep Existing" — callback with null means: do not touch the stored context field.
+    // The worker will reuse whatever processing_context was last saved on the image.
     document.getElementById('context-modal').style.display = 'none';
     if (_contextCallback) _contextCallback(null);
+    _contextCallback = null;
+}
+
+function contextModalClear() {
+    // "Clear Context" — callback with empty string tells the server to null out
+    // processing_context before reprocessing, so the model runs on the image alone.
+    document.getElementById('context-modal').style.display = 'none';
+    if (_contextCallback) _contextCallback('');
     _contextCallback = null;
 }
 

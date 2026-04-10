@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Help - A-Eye{% endblock %}
+
+{% block content %}
+<div class="help-page">
+    <header class="help-hero">
+        <div class="help-hero-kicker">Reference</div>
+        <h1 class="help-hero-title">Processing Context</h1>
+        <p class="help-hero-lede">
+            How the <em>Reprocess with Context</em> feature feeds extra hints into the vision model —
+            what it does, when to use it, and where it bites.
+        </p>
+        <nav class="help-toc" aria-label="Help contents">
+            <a href="#what-it-is">What it is</a>
+            <a href="#flow">Flow</a>
+            <a href="#entry-points">Entry points</a>
+            <a href="#prompt-changes">What changes in the prompt</a>
+            <a href="#good-context">Good context</a>
+            <a href="#weak-context">Weak context</a>
+            <a href="#gotchas">Gotchas</a>
+            <a href="#tldr">TL;DR</a>
+        </nav>
+    </header>
+
+    <section class="help-section" id="what-it-is">
+        <h2>What context actually is</h2>
+        <p>
+            Context is a freeform string (up to 500 characters) attached to an image before it
+            runs through the vision pipeline. The model sees it as plain-English background
+            information inside its prompt, alongside the photo's own EXIF metadata.
+        </p>
+        <p>
+            It is stored per-image in the <code>images.processing_context</code> SQLite column.
+            If you reprocess the same image later with no new context, the stored value is reused.
+        </p>
+    </section>
+
+    <section class="help-section" id="flow">
+        <h2>The flow</h2>
+        <pre class="help-flow"><code>user text ──► images.processing_context ──► worker ──► pipeline.process_image()
+                                                                │
+                                                                ▼
+                                             prompts.render_vision_prompt()
+                                                                │
+                                                                ▼
+                                                  Ollama vision model call</code></pre>
+        <p>
+            The context never ends up in filenames, descriptions, or tags directly. It only
+            shapes what the model says about the photo. After reprocessing, the original
+            <code>processing_context</code> value is left intact on the row so you can see
+            what guided the result.
+        </p>
+    </section>
+
+    <section class="help-section" id="entry-points">
+        <h2>Entry points</h2>
+        <div class="help-grid">
+            <article class="help-card">
+                <div class="help-card-tag">Dashboard</div>
+                <h3>Scan with Context</h3>
+                <p>
+                    Kicks off a full scan and attaches the typed context to every
+                    <strong>newly-discovered</strong> image. Images already in the DB are untouched.
+                </p>
+            </article>
+            <article class="help-card">
+                <div class="help-card-tag">Image Modal</div>
+                <h3>Reprocess</h3>
+                <p>
+                    Single-image reprocess. The modal pre-fills with the last used context so
+                    you can tweak it or clear it.
+                </p>
+            </article>
+            <article class="help-card">
+                <div class="help-card-tag">Review / Queue</div>
+                <h3>Bulk Reprocess</h3>
+                <p>
+                    Same modal, same behaviour — context is stamped onto every selected image
+                    before they re-enter the worker queue.
+                </p>
+            </article>
+            <article class="help-card">
+                <div class="help-card-tag">Search</div>
+                <h3>Reprocess Selected</h3>
+                <p>
+                    Use search to narrow down a set (e.g. <em>"dog"</em>) then reprocess the
+                    whole result with targeted context like <em>"The grey husky is Jax"</em>.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="help-section" id="prompt-changes">
+        <h2>What the model actually sees</h2>
+        <p>
+            Two things change in the prompt when context is present:
+        </p>
+        <ol class="help-steps">
+            <li>
+                <strong>A context block is injected</strong> into the prompt template just
+                before the instructions, using the <code>DEFAULT_CONTEXT_TEMPLATE</code>. The
+                model is told this is human-supplied background, not something it inferred
+                from the image.
+            </li>
+            <li>
+                <strong>The visible_rule swaps.</strong> Without context, the rule says
+                <em>"only describe what is clearly visible"</em>. With context, the rule
+                relaxes slightly so the model may incorporate plausibly-related facts from
+                the context when they clearly match what it sees.
+            </li>
+        </ol>
+        <p>
+            The rest of the template — tags, quality step, format instructions, single-line
+            DESCRIPTION contract — is unchanged. So a bad context will not corrupt filename
+            parsing, only accuracy.
+        </p>
+    </section>
+
+    <section class="help-section" id="good-context">
+        <h2>Context that helps</h2>
+        <ul class="help-list help-list-good">
+            <li><strong>Named subjects.</strong> <em>"The grey husky is Jax; the tabby cat is Pepper."</em></li>
+            <li><strong>Event labels.</strong> <em>"Holiday to Crete, July 2021."</em></li>
+            <li><strong>Proper nouns the model can't infer.</strong> Street names, venue names, pet names.</li>
+            <li><strong>Disambiguation hints.</strong> <em>"These are all from the same kitchen renovation."</em></li>
+            <li><strong>Language of the region.</strong> <em>"Signs are in Japanese; prefer romaji in descriptions."</em></li>
+        </ul>
+    </section>
+
+    <section class="help-section" id="weak-context">
+        <h2>Context that wastes tokens</h2>
+        <ul class="help-list help-list-weak">
+            <li><strong>Descriptions the model will derive anyway.</strong> <em>"A photo of a beach at sunset."</em></li>
+            <li><strong>Instructions to the model.</strong> <em>"Be more descriptive."</em> &mdash; use the Prompt editor in Settings for that.</li>
+            <li><strong>Information that contradicts the image.</strong> The model may either ignore it or hallucinate to reconcile.</li>
+            <li><strong>Very long narratives.</strong> Over ~200 characters, the signal-to-noise ratio drops.</li>
+        </ul>
+    </section>
+
+    <section class="help-section help-section-callout" id="gotchas">
+        <h2>Gotchas</h2>
+        <div class="help-callout help-callout-warn">
+            <div class="help-callout-label">Known footgun</div>
+            <p>
+                <strong>"Keep Existing Context" does not clear anything.</strong> Clicking it
+                tells the server to skip updating the context field, so the previously stored
+                value is still attached to the image when the worker picks it up. To actually
+                run without context, use the new <strong>Clear Context</strong> button.
+            </p>
+        </div>
+        <ul class="help-list">
+            <li>
+                <strong>Scan with Context only tags new files.</strong> Existing rows already
+                in the database are not updated — use Reprocess on those instead.
+            </li>
+            <li>
+                <strong>Context persists across reprocesses.</strong> The value in
+                <code>processing_context</code> stays until you explicitly overwrite or clear it.
+            </li>
+            <li>
+                <strong>Context does not survive a rename.</strong> Once a file is applied,
+                the context row stays but the description it produced is what gets written to
+                EXIF/XMP — the raw context string is not embedded anywhere on disk.
+            </li>
+            <li>
+                <strong>Two separate DBs.</strong> Context set in the main library is invisible
+                to the workspace and vice versa.
+            </li>
+            <li>
+                <strong>Length limit is 500 characters,</strong> enforced both in the UI and
+                the route handler. Longer input is truncated silently.
+            </li>
+            <li>
+                <strong>It cannot override the vision prompt.</strong> If the model is
+                refusing to describe something, tuning the default prompt in Settings will do
+                more than stuffing the refusal workaround into context.
+            </li>
+        </ul>
+    </section>
+
+    <section class="help-section" id="tldr">
+        <h2>TL;DR</h2>
+        <div class="help-tldr">
+            <div class="help-tldr-item">
+                <span class="help-tldr-num">01</span>
+                <p>Use context to name things the model can't know — people, pets, places, events.</p>
+            </div>
+            <div class="help-tldr-item">
+                <span class="help-tldr-num">02</span>
+                <p>Keep it short and factual. ~200 characters or less.</p>
+            </div>
+            <div class="help-tldr-item">
+                <span class="help-tldr-num">03</span>
+                <p>To run a clean reprocess, use <strong>Clear Context</strong>, not <em>Keep Existing</em>.</p>
+            </div>
+            <div class="help-tldr-item">
+                <span class="help-tldr-num">04</span>
+                <p>Tune the system prompt in Settings for style; use context for specific facts.</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

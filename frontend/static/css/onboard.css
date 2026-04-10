@@ -1,22 +1,29 @@
-/* ── Onboarding Wizard Layout ──────────────────────────────── */
+/* ── NOCTURNE: Onboarding Wizard ───────────────────────────────
+   Relies on the design tokens declared in style.css :root
+   ────────────────────────────────────────────────────────────── */
 
 .onboard-wrapper {
-    max-width: 560px;
-    margin: 3rem auto;
-    padding: 0 1.5rem;
+    max-width: 640px;
+    margin: 3.5rem auto;
+    padding: 0 var(--space-6);
 }
 
 .onboard-title {
     text-align: center;
+    font-family: var(--font-display);
     font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: var(--space-8);
 }
 
 .onboard-desc {
-    font-size: 0.9rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.55;
     color: var(--text-muted);
-    margin-bottom: 1.25rem;
+    margin-bottom: var(--space-4);
 }
 
 /* ── Progress Steps ───────────────────────────────────────── */
@@ -26,62 +33,68 @@
     align-items: center;
     justify-content: center;
     gap: 0;
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-8);
 }
 
 .progress-step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-2);
 }
 
 .step-number {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: var(--bg-input);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--bg-sunken);
     color: var(--text-muted);
-    border: 2px solid var(--border);
-    transition: all 0.2s;
+    border: 1px solid var(--border-strong);
+    transition: background var(--dur) var(--ease),
+                border-color var(--dur) var(--ease),
+                color var(--dur) var(--ease);
 }
 
 .step-label {
-    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--text-muted);
-    transition: color 0.2s;
+    transition: color var(--dur) var(--ease);
 }
 
 .progress-step.active .step-number {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
 }
 .progress-step.active .step-label {
-    color: var(--primary);
+    color: var(--accent);
 }
 
 .progress-step.done .step-number {
-    background: var(--success);
+    background: transparent;
     border-color: var(--success);
-    color: #fff;
+    color: var(--success);
 }
 .progress-step.done .step-label {
     color: var(--success);
 }
 
 .progress-line {
-    width: 40px;
-    height: 2px;
+    width: 48px;
+    height: 1px;
     background: var(--border);
-    margin: 0 0.4rem;
-    margin-bottom: 1.2rem;
-    transition: background 0.2s;
+    margin: 0 var(--space-2);
+    margin-bottom: 1.25rem;
+    transition: background var(--dur) var(--ease);
 }
 .progress-line.done {
     background: var(--success);
@@ -93,12 +106,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.25rem;
+    margin-top: var(--space-4);
 }
 
 .onboard-nav-right {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
 }
 
@@ -107,125 +120,108 @@
 .mode-cards {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
 }
 
 .mode-card {
-    border: 2px solid var(--border);
+    position: relative;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.25rem;
+    padding: var(--space-5);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color var(--dur) var(--ease),
+                background var(--dur) var(--ease);
 }
 .mode-card:hover {
-    border-color: var(--text-muted);
+    border-color: var(--text-dim);
 }
 .mode-card.selected {
-    border-color: var(--primary);
-    background: rgba(91, 138, 245, 0.08);
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+.mode-card.selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
 }
 .mode-card.readonly-locked {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
 }
 
 .mode-card-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+    margin-bottom: var(--space-2);
+    opacity: 0.85;
 }
 
 .mode-card-title {
-    font-size: 1.1rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: var(--space-1);
 }
 
 .mode-card-desc {
-    font-size: 0.85rem;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    line-height: 1.55;
     color: var(--text-muted);
-    line-height: 1.45;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2);
 }
 
 .mode-card-hint {
-    font-size: 0.8rem;
-    font-style: italic;
-    color: var(--text-muted);
-    opacity: 0.8;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
 }
 
-/* Compact variant (Step 4: Watch mode) */
+/* Compact variant (Watch mode, Security) */
 .mode-cards-compact {
     flex-direction: row;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 .mode-card-compact {
-    padding: 0.75rem 1rem;
+    padding: var(--space-4);
     flex: 1;
 }
 .mode-card-compact .mode-card-title {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.92rem;
+    margin-bottom: var(--space-1);
 }
 .mode-card-compact .mode-card-desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     margin-bottom: 0;
-}
-
-/* ── Radio Group (Rename mode) ───────────────────────────── */
-
-.radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.radio-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    cursor: pointer;
-    padding: 0.5rem 0;
-}
-
-.radio-label input[type="radio"] {
-    margin-top: 0.25rem;
-    flex-shrink: 0;
-}
-
-.radio-label div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.radio-label strong {
-    font-size: 0.95rem;
-}
-
-.radio-label small {
-    color: var(--text-muted);
-    font-size: 0.8rem;
 }
 
 /* ── Summary Card ─────────────────────────────────────────── */
 
 .onboard-summary {
-    background: var(--bg-input);
+    background: var(--bg-sunken);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1rem;
-    margin-top: 0.5rem;
+    padding: var(--space-2) var(--space-4);
+    margin-top: var(--space-3);
 }
 
 .summary-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.9rem;
+    align-items: baseline;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.85rem;
 }
 .summary-row:last-child {
     border-bottom: none;
@@ -233,37 +229,121 @@
 
 .summary-row-clickable {
     cursor: pointer;
-    transition: background 0.15s;
-    padding: 0.5rem 0.4rem;
-    margin: 0 -0.4rem;
-    border-radius: 4px;
+    transition: background var(--dur) var(--ease);
+    padding: 0.65rem var(--space-3);
+    margin: 0 calc(-1 * var(--space-3));
+    border-radius: var(--radius-sm);
 }
 .summary-row-clickable:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--bg-hover);
 }
 
 .summary-label {
-    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
     font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
 .summary-value {
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text);
+    text-align: right;
+}
+
+/* ── Warning / Info / Readonly callouts ───────────────────── */
+
+.onboard-warning {
+    background: var(--warning-bg);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--warning);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem var(--space-4);
+    margin-top: var(--space-4);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--warning);
+}
+
+.onboard-info {
+    background: var(--info-bg);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--info);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem var(--space-4);
+    margin-top: var(--space-4);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.mode-card-readonly-notice {
+    background: var(--info-bg);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--info);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem var(--space-4);
+    margin-top: var(--space-3);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* ── Model Pull Progress ─────────────────────────────────── */
+
+.pull-progress-container {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-input);
+    border-radius: 9999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.pull-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    border-radius: 9999px;
+    transition: width var(--dur-slow) var(--ease);
+}
+.pull-progress-bar.pull-error {
+    background: var(--error);
+}
+.pull-status {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-top: var(--space-2);
 }
 
 /* ── Collapsible Auth Section ────────────────────────────── */
 
 .onboard-auth-section {
-    margin-top: 1.25rem;
+    margin-top: var(--space-4);
 }
 
 .onboard-auth-toggle {
     cursor: pointer;
     color: var(--text-muted);
-    font-size: 0.9rem;
-    padding: 0.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: var(--space-2) 0;
     list-style: none;
     user-select: none;
+    transition: color var(--dur) var(--ease);
+}
+.onboard-auth-toggle:hover {
+    color: var(--text);
 }
 .onboard-auth-toggle::-webkit-details-marker {
     display: none;
@@ -271,120 +351,24 @@
 .onboard-auth-toggle::before {
     content: "\25B6";
     display: inline-block;
-    margin-right: 0.5rem;
-    font-size: 0.7rem;
-    transition: transform 0.15s;
+    margin-right: var(--space-2);
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    transition: transform var(--dur) var(--ease);
 }
 .onboard-auth-section[open] > .onboard-auth-toggle::before {
     transform: rotate(90deg);
+    color: var(--accent);
 }
-
 .onboard-auth-body {
-    padding-top: 0.75rem;
-}
-
-.password-match-error {
-    color: var(--error);
-    font-size: 0.8rem;
-}
-
-/* ── Warning Callout ──────────────────────────────────────── */
-
-.onboard-warning {
-    background: #3a2e15;
-    border: 1px solid var(--warning);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: var(--warning);
-}
-
-/* ── Read-Only Notice ────────────────────────────────────── */
-
-.mode-card-readonly-notice {
-    background: #152a3a;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    color: #8ec8ff;
-}
-
-/* ── Info Callout (blue) ─────────────────────────────────── */
-
-.onboard-info {
-    background: #152a3a;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: #8ec8ff;
-}
-
-/* ── Processing Mode Labels ──────────────────────────────── */
-
-.processing-mode-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    cursor: pointer;
-    padding: 0.5rem 0;
-}
-
-.processing-mode-label input[type="checkbox"] {
-    margin-top: 0.2rem;
-    flex-shrink: 0;
-}
-
-.processing-mode-label div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.processing-mode-label strong {
-    font-size: 0.95rem;
-}
-
-.processing-mode-label small {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-}
-
-/* ── Model Pull Progress ─────────────────────────────────── */
-
-.pull-progress-container {
-    width: 100%;
-    height: 8px;
-    background: var(--bg-input);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.pull-progress-bar {
-    height: 100%;
-    width: 0%;
-    background: var(--primary);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-.pull-progress-bar.pull-error {
-    background: var(--error);
-}
-.pull-status {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.35rem;
+    padding-top: var(--space-3);
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
 
-@media (max-width: 480px) {
-    .onboard-wrapper { margin: 1.5rem auto; }
-    .onboard-nav-right { flex-direction: column; }
-    .progress-line { width: 20px; }
+@media (max-width: 640px) {
+    .onboard-wrapper { margin: 1.5rem auto; padding: 0 var(--space-4); }
+    .onboard-nav-right { flex-direction: column; align-items: stretch; }
+    .progress-line { width: 24px; }
     .mode-cards-compact { flex-direction: column; }
 }

@@ -33,6 +33,9 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
+# Silence exifread's library logger — it emits WARNING for every PNG/non-JPEG
+# ("PNG file does not have exif data."), which is by-design and not an error.
+logging.getLogger("exifread").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Resolve paths relative to the project root
@@ -383,6 +386,14 @@ async def page_mosaic(request: Request):
         return HTMLResponse("<p>Templates not found</p>")
     ctx = _page_context(request)
     return templates.TemplateResponse(request, name="mosaic.html", context=ctx)
+
+
+@app.get("/help", response_class=HTMLResponse)
+async def page_help(request: Request):
+    if not templates:
+        return HTMLResponse("<p>Templates not found</p>")
+    ctx = _page_context(request)
+    return templates.TemplateResponse(request, name="help.html", context=ctx)
 
 
 @app.get("/history", response_class=HTMLResponse)

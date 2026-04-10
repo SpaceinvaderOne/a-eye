@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}A-Eye{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=64">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css?v=nocturne2">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body class="{% if catalogue_mode %}catalogue-mode{% endif %}" hx-headers='{"Accept": "application/json"}'>
@@ -22,6 +24,7 @@
             <a href="/queue" class="nav-link {% if request.url.path == '/queue' %}active{% endif %}">All Images</a>
             <a href="/history" class="nav-link {% if request.url.path == '/history' %}active{% endif %}">History</a>
             <a href="/settings" class="nav-link {% if request.url.path == '/settings' %}active{% endif %}">Settings</a>
+            <a href="/help" class="nav-link {% if request.url.path == '/help' %}active{% endif %}">Help</a>
         </div>
         <div class="nav-mode">
             {% if photos_readonly %}
@@ -144,9 +147,15 @@
             <textarea id="context-modal-input" rows="3" style="width:100%;margin:0.5rem 0"
                       placeholder="e.g. Holiday to Crete 2021, or The grey husky is named Jax"
                       maxlength="500"></textarea>
+            <p class="text-muted" style="font-size:0.78rem;margin:0.25rem 0 0.75rem">
+                <strong>Keep Existing</strong> reuses the stored context.
+                <strong>Clear Context</strong> reprocesses with no context at all.
+                <a href="/help#gotchas" target="_blank" rel="noopener">Learn more</a>
+            </p>
             <div class="confirm-actions">
                 <button class="btn" onclick="contextModalCancel()">Cancel</button>
-                <button class="btn" onclick="contextModalSkip()">Without Context</button>
+                <button class="btn" onclick="contextModalClear()">Clear Context</button>
+                <button class="btn" onclick="contextModalSkip()">Keep Existing</button>
                 <button class="btn btn-primary" onclick="contextModalOk()">Proceed</button>
             </div>
         </div>
@@ -169,6 +178,6 @@
     window.PHOTOS_READONLY = {{ 'true' if photos_readonly else 'false' }};
     window.CATALOGUE_MODE = {{ 'true' if catalogue_mode else 'false' }};
     </script>
-    <script src="/static/js/app.js?v=76"></script>
+    <script src="/static/js/app.js?v=78"></script>
 </body>
 </html>

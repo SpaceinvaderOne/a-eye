@@ -74,8 +74,15 @@ async def process_image(
         raw_name = suggested_name
 
     except Exception as exc:
-        logger.error("AI processing failed for %s: %s", file_path, exc)
-        result.error = str(exc)
+        # Many httpx / library exceptions have an empty str(exc) but a useful
+        # repr(). Log both type and repr with traceback so failures are
+        # diagnosable from the log alone.
+        logger.error(
+            "AI processing failed for %s: %s: %r",
+            file_path, type(exc).__name__, exc,
+            exc_info=True,
+        )
+        result.error = str(exc) or f"{type(exc).__name__}: {exc!r}"
         return result
 
     # ── Filename assembly (skip when rename disabled) ──────────────────────
