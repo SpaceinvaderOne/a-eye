@@ -57,6 +57,20 @@ async def lifespan(app: FastAPI):
     db = await init_db(db_path)
     app.state.db = db
 
+    # Startup recovery: reset any images stuck in 'processing' from a previous
+    # unclean shutdown. Without this, a container restart leaves those images
+    # permanently blocked and the worker queue stalls indefinitely.
+    async with db.execute(
+        "UPDATE images SET status = 'pending', in_queue = 0 WHERE status = 'processing'"
+    ) as cursor:
+        recovered = cursor.rowcount
+    if recovered:
+        await db.commit()
+        logger.info(
+            "Startup recovery: reset %d stuck 'processing' image(s) to 'pending'",
+            recovered,
+        )
+
     # Prompt library — ensure defaults exist, load active templates
     await ensure_defaults(db)
     vision_prompt = await get_active_prompt(db, STAGE_VISION)
@@ -78,6 +92,20 @@ async def lifespan(app: FastAPI):
     worker = WorkerQueue(db=db, settings=settings, ollama=ollama)
     app.state.worker = worker
     await worker.start()
+
+    # Startup recovery: re-enqueue any images that were pending when the
+    # container last stopped. The worker queue is in-memory only, so pending
+    # items from a previous session are never picked up without this.
+    async with db.execute(
+        "SELECT id FROM images WHERE status = 'pending'"
+    ) as cursor:
+        pending_ids = [row[0] for row in await cursor.fetchall()]
+    if pending_ids:
+        enqueued = await worker.enqueue(pending_ids)
+        logger.info(
+            "Startup recovery: enqueued %d pending image(s) for processing",
+            enqueued,
+        )
 
     # File watcher
     watcher = FileWatcher(db=db, settings=settings, worker=worker)
