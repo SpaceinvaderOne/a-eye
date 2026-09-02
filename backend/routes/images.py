@@ -338,6 +338,9 @@ async def api_download_batch(request: Request, body: BatchDownloadRequest):
                 arcname = f"{stem}_{counter}{ext}"
             seen_names.add(arcname)
             zf.write(file_path, arcname)
+            sidecar = file_path.parent / f"{file_path.name}.xmp"
+            if sidecar.exists():
+                zf.write(sidecar, f"{arcname}.xmp")
 
     buffer.seek(0)
     return StreamingResponse(
