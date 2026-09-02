@@ -154,7 +154,12 @@ class OllamaClient:
             json=payload,
             timeout=_GENERATE_TIMEOUT,
         )
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            try:
+                detail = resp.json().get("error", "") or resp.text[:300]
+            except Exception:
+                detail = resp.text[:300]
+            raise RuntimeError(f"Ollama error ({resp.status_code}): {detail}")
         data = resp.json()
         return data.get("response", "").strip()
 
