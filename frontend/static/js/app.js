@@ -508,26 +508,21 @@ function modelMatches(modelName, configValue) {
 }
 
 function populateModelDropdowns(data) {
-    const visionSelect = document.getElementById('vision_model');
     const llmSelect = document.getElementById('llm_model');
-    if (!visionSelect || !llmSelect) return;
+    if (!llmSelect) return;
 
-    const currentVision = visionSelect.dataset.current || '';
     const currentLlm = llmSelect.dataset.current || '';
     const visionModels = data.vision || [];
     const allModels = data.all || [];
 
-    // Vision dropdown: only vision-capable models
-    visionSelect.innerHTML = '';
-    if (visionModels.length === 0) {
-        visionSelect.innerHTML = '<option value="" disabled selected>No vision models found in Ollama</option>';
-    } else {
+    // Vision datalist: only vision-capable models, as suggestions for the text input
+    const visionList = document.getElementById('vision_model_list');
+    if (visionList) {
+        visionList.innerHTML = '';
         visionModels.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
-            opt.textContent = name;
-            if (modelMatches(name, currentVision)) opt.selected = true;
-            visionSelect.appendChild(opt);
+            visionList.appendChild(opt);
         });
     }
 
@@ -556,7 +551,6 @@ function _fetchAndPopulateModels(resultDiv, visionSelect) {
             const connected = data.ollama && data.ollama.connected;
             if (!connected) {
                 if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-error">Failed</span> <small>Could not reach Ollama</small>';
-                if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Could not reach Ollama</option>';
                 return;
             }
             if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-processing">Loading models...</span>';
@@ -576,7 +570,6 @@ function _fetchAndPopulateModels(resultDiv, visionSelect) {
         })
         .catch(() => {
             if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-error">Failed</span> <small>Connection error</small>';
-            if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Connection error</option>';
         });
 }
 
@@ -585,7 +578,6 @@ function loadModels() {
     const visionSelect = document.getElementById('vision_model');
     if (!resultDiv) return;
     resultDiv.innerHTML = '<span class="badge badge-processing">Connecting...</span>';
-    if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Loading models...</option>';
     _fetchAndPopulateModels(resultDiv, visionSelect);
 }
 

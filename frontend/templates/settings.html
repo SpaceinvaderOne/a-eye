@@ -33,9 +33,10 @@
                 </div>
                 <div class="form-group">
                     <label for="vision_model">Vision Model (required)</label>
-                    <select id="vision_model" data-current="{{ settings.vision_model }}">
-                        <option value="" disabled selected>Loading models...</option>
-                    </select>
+                    <input type="text" id="vision_model" list="vision_model_list"
+                           data-current="{{ settings.vision_model }}" value="{{ settings.vision_model }}"
+                           placeholder="e.g. minicpm-v">
+                    <datalist id="vision_model_list"></datalist>
                     <small>Analyses photos, generates descriptions, and suggests filenames. Must support image input.</small>
                 </div>
                 <div class="form-group">
