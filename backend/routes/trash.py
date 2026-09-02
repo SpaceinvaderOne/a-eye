@@ -145,6 +145,9 @@ async def api_trash_batch(request: Request, body: TrashBatchRequest):
 @router.post("/images/{image_id}/restore")
 async def api_restore_image(request: Request, image_id: int):
     """Restore a single image from .trash to its original location."""
+    if getattr(request.app.state, "photos_readonly", False):
+        return JSONResponse(status_code=403, content={"error": "Photos directory is read-only"})
+
     db = request.app.state.db
     settings = request.app.state.settings
     photos_dir = Path(settings.photos_dir)

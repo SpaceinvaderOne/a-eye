@@ -41,7 +41,7 @@ function _esc(str) {
     if (!str) return '';
     var div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── Auth: Logout + 401 redirect ─────────────────────────────
@@ -162,6 +162,7 @@ function updateDashboard() {
             }
 
             // Toggle idle/active progress sections
+            const w = data.worker || {};
             const p = data.progress || {};
             var isActive = (stats.pending || 0) + (stats.processing || 0) > 0;
             var progressActive = document.getElementById('progress-active');
@@ -169,7 +170,7 @@ function updateDashboard() {
             if (progressActive) progressActive.style.display = isActive ? '' : 'none';
             if (progressIdle) progressIdle.style.display = isActive ? 'none' : '';
 
-            // Stop button visibility
+            // Stop / Resume button
             var stopBtn = document.getElementById('stop-processing-btn');
             if (stopBtn) {
                 var stopRequested = w.stop_requested || false;
@@ -177,14 +178,17 @@ function updateDashboard() {
                     stopBtn.style.display = 'none';
                     stopBtn.disabled = false;
                     stopBtn.textContent = 'Stop Processing';
+                    stopBtn.onclick = stopProcessing;
                 } else if (stopRequested) {
                     stopBtn.style.display = '';
-                    stopBtn.disabled = true;
-                    stopBtn.textContent = 'Stopping...';
+                    stopBtn.disabled = false;
+                    stopBtn.textContent = 'Resume Processing';
+                    stopBtn.onclick = resumeProcessing;
                 } else {
                     stopBtn.style.display = '';
                     stopBtn.disabled = false;
                     stopBtn.textContent = 'Stop Processing';
+                    stopBtn.onclick = stopProcessing;
                 }
             }
 
@@ -224,7 +228,6 @@ function updateDashboard() {
             updateScheduleStatus(data);
 
             // Update worker status
-            const w = data.worker || {};
             var workerLabel = w.running ? 'Active' : 'Stopped';
             if (w.paused) workerLabel = 'Paused (scheduled)';
             _setText('worker-running', workerLabel);
@@ -284,7 +287,7 @@ function _initShowcase() {
             var images = data.images || [];
             if (images.length === 0) {
                 grid.innerHTML = '<p class="showcase-empty">' +
-                    (tag ? "No photos with tag '" + tag + "'" : 'No processed photos yet') + '</p>';
+                    (tag ? "No photos with tag '" + _esc(tag) + "'" : 'No processed photos yet') + '</p>';
                 return;
             }
             grid.innerHTML = '';
@@ -2647,6 +2650,25 @@ function stopProcessing() {
         .catch(function() { showToast('Failed to stop processing', 'error'); });
 }
 
+function resumeProcessing() {
+    var btn = document.getElementById('stop-processing-btn');
+    if (btn) { btn.textContent = 'Resuming...'; btn.disabled = true; }
+    fetch('/api/scan/resume', { method: 'POST' })
+        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function() { showToast('Processing resumed'); updateDashboard(); })
+        .catch(function() { showToast('Failed to resume processing', 'error'); });
+}
+
+function retryAllErrors() {
+    fetch('/api/images/retry-all-errors', { method: 'POST' })
+        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(data) {
+            showToast('Retrying ' + (data.count || 0) + ' error image(s)');
+            setTimeout(function() { window.location.reload(); }, 600);
+        })
+        .catch(function() { showToast('Failed to retry errors', 'error'); });
+}
+
 // ── Settings: Processing Modes ──────────────────────────────
 
 function toggleCatalogueMode() {
@@ -3198,7 +3220,7 @@ function deleteBackup(filename) {
 function _escHtml(str) {
     var div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── Library Verification ─────────────────────────────────────

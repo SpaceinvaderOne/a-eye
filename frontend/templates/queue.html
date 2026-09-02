@@ -89,6 +89,7 @@
         {% if workspace_mode %}<button class="btn btn-sm btn-error" onclick="wsBulkDelete()">Delete Selected</button>{% endif %}
         {% elif status_filter == 'error' %}
         <button class="btn btn-sm btn-primary" onclick="bulkAction('process')">Retry Selected</button>
+        <button class="btn btn-sm btn-primary" onclick="retryAllErrors()">Retry All Errors</button>
         <button class="btn btn-sm" onclick="bulkQueueAdd()">Add to Queue</button>
         {% if workspace_mode %}<button class="btn btn-sm btn-error" onclick="wsBulkDelete()">Delete Selected</button>{% else %}<button class="btn btn-sm btn-error" onclick="bulkTrash()">Delete Selected</button>{% endif %}
         {% elif status_filter == 'quality_issues' %}

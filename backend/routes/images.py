@@ -221,7 +221,7 @@ async def api_image_viewer(request: Request, image_id: int):
         raise HTTPException(404, "Image not found")
 
     filename = html.escape(image.get("current_filename") or image.get("original_filename") or "Image")
-    html = f"""<!DOCTYPE html>
+    page = f"""<!DOCTYPE html>
 <html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -240,7 +240,7 @@ img.zoomed {{ max-width:none; max-height:none; cursor:zoom-out; }}
 <img src="/api/images/{image_id}/file" alt="{filename}" onclick="this.classList.toggle('zoomed')">
 <script>document.addEventListener('keydown',function(e){{ if(e.key==='Escape')window.close(); }});</script>
 </body></html>"""
-    return HTMLResponse(html)
+    return HTMLResponse(page)
 
 
 # -- Processing --------------------------------------------------------------
@@ -279,6 +279,23 @@ async def api_process_batch(request: Request, body: BatchProcessRequest):
             await update_image(db, image_id, processing_context=ctx)
     worker = request.app.state.worker
     count = await worker.enqueue(body.image_ids)
+    return {"status": "enqueued", "count": count}
+
+
+@router.post("/images/retry-all-errors")
+async def api_retry_all_errors(request: Request):
+    """Reset all error images to pending and enqueue them for reprocessing."""
+    db = request.app.state.db
+    cursor = await db.execute("SELECT id FROM images WHERE status = 'error'")
+    error_ids = [row[0] for row in await cursor.fetchall()]
+    if error_ids:
+        await db.execute(
+            "UPDATE images SET status = 'pending', error_message = NULL, retry_count = 0 "
+            "WHERE status = 'error'"
+        )
+        await db.commit()
+    worker = request.app.state.worker
+    count = await worker.enqueue(error_ids)
     return {"status": "enqueued", "count": count}
 
 

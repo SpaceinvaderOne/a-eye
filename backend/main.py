@@ -20,7 +20,7 @@ import pillow_heif
 pillow_heif.register_heif_opener()
 
 from backend.config import get_settings
-from backend.database import init_db, get_image, get_outcome_stats, get_stats, list_images, get_rename_history, count_images, count_rename_history
+from backend.database import init_db, recover_stuck_images, get_pending_image_ids, get_image, get_outcome_stats, get_stats, list_images, get_rename_history, count_images, count_rename_history
 from backend.ollama_client import OllamaClient
 from backend.prompts import ensure_defaults, get_active_prompt, STAGE_VISION, STAGE_CONTEXT
 from backend.routes import create_api_router
@@ -57,6 +57,14 @@ async def lifespan(app: FastAPI):
     db = await init_db(db_path)
     app.state.db = db
 
+    # Recover images stuck in 'processing' from a previous crash
+    recovered, failed = await recover_stuck_images(db)
+    if recovered or failed:
+        logger.info(
+            "Recovery: reset %d stuck image(s) to pending, %d exceeded retry limit",
+            recovered, failed,
+        )
+
     # Prompt library — ensure defaults exist, load active templates
     await ensure_defaults(db)
     vision_prompt = await get_active_prompt(db, STAGE_VISION)
@@ -78,6 +86,12 @@ async def lifespan(app: FastAPI):
     worker = WorkerQueue(db=db, settings=settings, ollama=ollama)
     app.state.worker = worker
     await worker.start()
+
+    # Re-enqueue any pending images from a previous session
+    pending_ids = await get_pending_image_ids(db)
+    if pending_ids:
+        await worker.enqueue(pending_ids)
+        logger.info("Re-enqueued %d pending image(s) from previous session", len(pending_ids))
 
     # File watcher
     watcher = FileWatcher(db=db, settings=settings, worker=worker)

@@ -4,7 +4,7 @@ import asyncio
 
 from fastapi import APIRouter, Request
 
-from backend.database import get_outcome_stats, get_stats, list_images, update_image
+from backend.database import get_outcome_stats, get_pending_image_ids, get_stats, list_images, update_image
 
 router = APIRouter()
 
@@ -40,6 +40,21 @@ async def trigger_scan(request: Request):
     asyncio.create_task(_do_scan())
 
     return {"status": "started", "message": "Scan started" + (" with context" if context else "")}
+
+
+@router.post("/scan/resume")
+async def resume_processing(request: Request):
+    """Clear the stop flag and re-enqueue any pending images."""
+    worker = request.app.state.worker
+    db = request.app.state.db
+
+    worker.clear_stop()
+
+    pending_ids = await get_pending_image_ids(db)
+    if pending_ids:
+        await worker.enqueue(pending_ids)
+
+    return {"resumed": True, "enqueued": len(pending_ids)}
 
 
 @router.post("/scan/stop")

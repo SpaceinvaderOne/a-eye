@@ -186,6 +186,14 @@ class WorkerQueue:
             logger.warning("Worker %d: image %d not found in DB", worker_id, image_id)
             return
 
+        # Guard against double-processing (e.g. duplicate enqueue)
+        if image["status"] not in ("pending", "processing"):
+            logger.debug(
+                "Worker %d: image %d already in status '%s', skipping",
+                worker_id, image_id, image["status"],
+            )
+            return
+
         photos_dir = Path(self.settings.photos_dir)
         file_path = (photos_dir / image["file_path"]).resolve()
         # Verify the file is within the photos directory

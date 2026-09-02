@@ -217,7 +217,7 @@ class FileWatcher:
         photos_dir = Path(self.settings.photos_dir)
         if not photos_dir.exists():
             logger.warning("Photos directory does not exist: %s", photos_dir)
-            return 0, 0
+            return 0, 0, []
 
         new_ids: list[int] = []
         skipped = 0

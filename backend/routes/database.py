@@ -29,14 +29,15 @@ def _backups_dir(request: Request) -> Path:
 
 def _validate_backup_filename(filename: str, backups: Path) -> Path:
     """Validate a backup filename and return the full path. Raises 404/400."""
-    # Prevent path traversal
-    if "/" in filename or "\\" in filename or ".." in filename:
+    if not filename.endswith(".db"):
+        raise HTTPException(400, "Invalid backup file")
+    path = (backups / filename).resolve()
+    try:
+        path.relative_to(backups.resolve())
+    except ValueError:
         raise HTTPException(400, "Invalid filename")
-    path = backups / filename
     if not path.exists():
         raise HTTPException(404, "Backup not found")
-    if not path.suffix == ".db":
-        raise HTTPException(400, "Invalid backup file")
     return path
 
 
@@ -402,13 +403,22 @@ async def api_restore_upload(request: Request, file: UploadFile = File(...)):
     uploaded_name = f"a-eye-uploaded-{timestamp}.db"
     uploaded_path = backups / uploaded_name
 
+    max_size = 100 * 1024 * 1024  # 100 MB
     try:
+        total = 0
         with open(uploaded_path, "wb") as f:
             while True:
                 chunk = await file.read(1024 * 64)
                 if not chunk:
                     break
+                total += len(chunk)
+                if total > max_size:
+                    f.close()
+                    os.unlink(uploaded_path)
+                    raise HTTPException(413, "Upload too large — 100 MB limit for database restores")
                 f.write(chunk)
+    except HTTPException:
+        raise
     except OSError as exc:
         raise HTTPException(500, f"Failed to save uploaded file: {exc}")
 

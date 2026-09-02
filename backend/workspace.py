@@ -74,6 +74,15 @@ class Workspace:
 
         db_path = str(self.workspace_dir / "workspace.db")
         self.db = await init_db(db_path)
+
+        # Reset any workspace images stuck in 'processing' from a previous crash
+        cursor = await self.db.execute(
+            "UPDATE images SET status = 'pending' WHERE status = 'processing'"
+        )
+        if cursor.rowcount:
+            await self.db.commit()
+            logger.info("Workspace recovery: reset %d stuck image(s) to pending", cursor.rowcount)
+
         logger.info("Workspace initialized at %s", self.workspace_dir)
 
     async def close(self) -> None:
@@ -160,7 +169,13 @@ class Workspace:
 
                 image = pending[0]
                 image_id = image["id"]
-                file_path = self.workspace_dir / image["file_path"]
+                file_path = (self.workspace_dir / image["file_path"]).resolve()
+                try:
+                    file_path.relative_to(self.workspace_dir.resolve())
+                except ValueError:
+                    logger.warning("Workspace: path traversal blocked for image %d", image_id)
+                    await update_image(self.db, image_id, status="error", error_message="Invalid file path")
+                    continue
 
                 if not file_path.exists():
                     await update_image(self.db, image_id, status="error", error_message="File not found")
@@ -292,7 +307,11 @@ class Workspace:
             raise ValueError("Image not found")
 
         # Remove file and its XMP sidecar from disk
-        file_path = self.workspace_dir / image["file_path"]
+        file_path = (self.workspace_dir / image["file_path"]).resolve()
+        try:
+            file_path.relative_to(self.workspace_dir.resolve())
+        except ValueError:
+            raise ValueError("Invalid file path")
         if file_path.exists():
             try:
                 file_path.unlink()
@@ -335,7 +354,11 @@ class Workspace:
 
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_STORED) as zf:
             for image in images:
-                file_path = self.workspace_dir / image["file_path"]
+                file_path = (self.workspace_dir / image["file_path"]).resolve()
+                try:
+                    file_path.relative_to(self.workspace_dir.resolve())
+                except ValueError:
+                    continue
                 if not file_path.exists():
                     continue
 
