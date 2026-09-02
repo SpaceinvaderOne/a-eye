@@ -3274,12 +3274,14 @@ function cleanupOrphans(ids) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_ids: ids })
             })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                showToast(data.removed + ' orphaned records removed');
-                verifyLibrary(); // Re-run to refresh results
+            .then(function(r) {
+                return r.json().then(function(data) {
+                    if (!r.ok) throw new Error(data.detail || 'Cleanup failed');
+                    showToast(data.removed + ' orphaned records removed');
+                    verifyLibrary();
+                });
             })
-            .catch(function() { showToast('Cleanup failed', 'error'); });
+            .catch(function(err) { showToast(err.message || 'Cleanup failed', 'error'); });
         }, 'btn-warning');
 }
 
