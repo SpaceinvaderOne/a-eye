@@ -81,6 +81,9 @@ async def api_update_prompt(request: Request, prompt_id: int, body: PromptUpdate
         await db_update_prompt(db, prompt_id, name=body.name, content=body.content)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+    await _reload_templates(request)
+
     return {"updated": True}
 
 
@@ -92,6 +95,9 @@ async def api_delete_prompt(request: Request, prompt_id: int):
         await db_delete_prompt(db, prompt_id)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+    await _reload_templates(request)
+
     return {"deleted": True}
 
 
