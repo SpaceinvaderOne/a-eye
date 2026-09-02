@@ -7,6 +7,7 @@ from typing import Any
 @dataclass
 class MetadataResult:
     date: str | None = None
+    datetime_full: str | None = None
     gps_lat: float | None = None
     gps_lon: float | None = None
     camera_model: str | None = None

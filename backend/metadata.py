@@ -75,6 +75,27 @@ def _extract_date(tags: dict[str, Any]) -> str | None:
     return None
 
 
+def _extract_datetime(tags: dict[str, Any]) -> str | None:
+    """Extract full ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS) when time is present."""
+    for tag_name in ("EXIF DateTimeOriginal", "EXIF DateTimeDigitized", "Image DateTime"):
+        val = tags.get(tag_name)
+        if not val:
+            continue
+        raw = str(val).strip()
+        parts = raw.split(" ", 1)
+        date_part = parts[0].replace(":", "-")
+        if date_part.startswith("0000"):
+            continue
+        dparts = date_part.split("-")
+        if len(dparts) != 3 or "00" in dparts[1:]:
+            continue
+        tpart = parts[1].strip() if len(parts) == 2 else ""
+        if len(tpart) == 8 and tpart[2] == ":" and tpart[5] == ":":
+            return f"{date_part}T{tpart}"
+        return date_part
+    return None
+
+
 def _extract_camera(tags: dict[str, Any]) -> str | None:
     """Extract camera make/model as a combined string."""
     make = str(tags.get("Image Make", "")).strip()
@@ -128,6 +149,7 @@ async def extract_metadata(file_path: Path) -> MetadataResult:
         logger.warning("exifread failed for %s", file_path, exc_info=True)
 
     date = _extract_date(tags)
+    datetime_full = _extract_datetime(tags)
     gps_lat, gps_lon = _extract_gps(tags)
     camera_model = _extract_camera(tags)
 
@@ -146,6 +168,7 @@ async def extract_metadata(file_path: Path) -> MetadataResult:
 
     return MetadataResult(
         date=date,
+        datetime_full=datetime_full,
         gps_lat=gps_lat,
         gps_lon=gps_lon,
         camera_model=camera_model,

@@ -310,7 +310,8 @@ class WorkerQueue:
                     image_path=current_file,
                     description=result.vision_description if want_desc else None,
                     tags=result.ai_tags if want_tags else None,
-                    date=image_refreshed.get("exif_date"),
+                    date=(result.metadata.datetime_full if result.metadata else None)
+                    or image_refreshed.get("exif_date"),
                 )
                 sidecar_relative = str(sidecar.relative_to(photos_dir))
                 await update_image(self.db, image_id, sidecar_path=sidecar_relative)
