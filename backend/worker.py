@@ -187,9 +187,9 @@ class WorkerQueue:
             return
 
         # Guard against double-processing (e.g. duplicate enqueue)
-        if image["status"] not in ("pending", "processing"):
+        if image["status"] != "pending":
             logger.debug(
-                "Worker %d: image %d already in status '%s', skipping",
+                "Worker %d: image %d not in status 'pending' (was '%s'), skipping",
                 worker_id, image_id, image["status"],
             )
             return

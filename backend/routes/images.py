@@ -260,9 +260,10 @@ async def api_process_image(request: Request, image_id: int):
         context = body.get("context")
     except Exception:
         pass
+    updates: dict = {"status": "pending", "error_message": None}
     if context is not None:
-        ctx = context.strip()[:500] if context.strip() else None
-        await update_image(db, image_id, processing_context=ctx)
+        updates["processing_context"] = context.strip()[:500] if context.strip() else None
+    await update_image(db, image_id, **updates)
 
     worker = request.app.state.worker
     await worker.enqueue([image_id])
@@ -273,10 +274,12 @@ async def api_process_image(request: Request, image_id: int):
 async def api_process_batch(request: Request, body: BatchProcessRequest):
     """Process multiple images through the pipeline."""
     db = request.app.state.db
-    if body.context is not None:
-        ctx = body.context.strip()[:500] if body.context.strip() else None
-        for image_id in body.image_ids:
-            await update_image(db, image_id, processing_context=ctx)
+    ctx = body.context.strip()[:500] if body.context and body.context.strip() else None
+    for image_id in body.image_ids:
+        updates: dict = {"status": "pending", "error_message": None}
+        if body.context is not None:
+            updates["processing_context"] = ctx
+        await update_image(db, image_id, **updates)
     worker = request.app.state.worker
     count = await worker.enqueue(body.image_ids)
     return {"status": "enqueued", "count": count}

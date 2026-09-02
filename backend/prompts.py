@@ -447,7 +447,7 @@ def render_vision_prompt(
     if "DESCRIPTION:" not in rendered or "FILENAME:" not in rendered:
         rendered = rendered.rstrip() + "\n\n" + format_instructions
 
-    lang = output_language.strip()
+    lang = output_language.strip().splitlines()[0][:60] if output_language.strip() else ""
     if lang and lang.lower() != "english":
         rendered += f"\nWrite the DESCRIPTION and TAGS in {lang}."
 
