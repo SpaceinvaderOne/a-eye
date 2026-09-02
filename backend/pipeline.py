@@ -67,6 +67,7 @@ async def process_image(
             metadata=meta_for_prompt,
             include_tags=True,  # Always generate tags for the database
             processing_context=processing_context,
+            output_language=settings.output_language,
         )
         result.vision_description = description
         result.ai_tags = tags

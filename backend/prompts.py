@@ -387,6 +387,7 @@ def render_vision_prompt(
     metadata_text: str,
     include_tags: bool,
     processing_context: str | None,
+    output_language: str = "",
 ) -> str:
     """Render a vision prompt template with all dynamic variables injected.
 
@@ -396,6 +397,7 @@ def render_vision_prompt(
         metadata_text: Pre-formatted metadata string from _format_metadata_for_prompt().
         include_tags: Whether to include the tags instruction step.
         processing_context: User-provided context string (or None).
+        output_language: Language to request for DESCRIPTION/TAGS output (or "" for default).
 
     Returns:
         The fully rendered prompt string ready to send to the model.
@@ -444,6 +446,10 @@ def render_vision_prompt(
     # Safety net: auto-append format instructions if not present in output
     if "DESCRIPTION:" not in rendered or "FILENAME:" not in rendered:
         rendered = rendered.rstrip() + "\n\n" + format_instructions
+
+    lang = output_language.strip()
+    if lang and lang.lower() != "english":
+        rendered += f"\nWrite the DESCRIPTION and TAGS in {lang}."
 
     return rendered
 

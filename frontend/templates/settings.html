@@ -46,6 +46,11 @@
                     </select>
                     <small>Enables natural-language search queries. Without this, search uses basic keyword matching.</small>
                 </div>
+                <div class="form-group">
+                    <label for="output_language">AI Output Language</label>
+                    <input type="text" id="output_language" data-current="{{ settings.output_language }}" value="{{ settings.output_language }}" placeholder="English">
+                    <small>Language for AI descriptions and tags. Leave blank for English.</small>
+                </div>
             </div>
 
             <!-- Processing Modes -->

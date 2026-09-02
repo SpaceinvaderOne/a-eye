@@ -2784,7 +2784,7 @@ function saveSettings() {
 
     const settings = {};
     const fields = [
-        'ollama_host', 'vision_model', 'llm_model',
+        'ollama_host', 'vision_model', 'llm_model', 'output_language',
         'catalogue_mode',
         'process_rename', 'process_write_description', 'process_write_tags',
         'filename_template', 'filename_case', 'max_filename_len',

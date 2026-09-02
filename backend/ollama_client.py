@@ -180,6 +180,7 @@ class OllamaClient:
         metadata: dict[str, Any],
         include_tags: bool = False,
         processing_context: str | None = None,
+        output_language: str = "",
     ) -> tuple[str, str, list[str], list[str]]:
         """Single-model mode: vision model produces description, filename, tags, and quality flags.
 
@@ -198,6 +199,7 @@ class OllamaClient:
             metadata_text=meta_lines,
             include_tags=include_tags,
             processing_context=processing_context,
+            output_language=output_language,
         )
 
         image_b64 = _encode_image(image_path)
