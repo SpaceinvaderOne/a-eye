@@ -158,11 +158,19 @@ class OllamaClient:
         if options:
             payload["options"] = options
 
-        resp = await self._client.post(
-            f"{self.host}/api/generate",
-            json=payload,
-            timeout=_GENERATE_TIMEOUT,
-        )
+        try:
+            resp = await self._client.post(
+                f"{self.host}/api/generate",
+                json=payload,
+                timeout=_GENERATE_TIMEOUT,
+            )
+        except httpx.TimeoutException:
+            raise RuntimeError(
+                f"Ollama timed out after {int(_GENERATE_TIMEOUT)}s — "
+                "the model may still be loading or the GPU may be busy"
+            )
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Ollama connection error: {exc.__class__.__name__}: {exc}")
         if resp.status_code >= 400:
             try:
                 detail = resp.json().get("error", "") or resp.text[:300]

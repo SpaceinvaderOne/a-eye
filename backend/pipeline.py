@@ -76,7 +76,7 @@ async def process_image(
 
     except Exception as exc:
         logger.error("AI processing failed for %s: %s", file_path, exc)
-        result.error = str(exc)
+        result.error = str(exc) or exc.__class__.__name__
         return result
 
     # ── Filename assembly (skip when rename disabled) ──────────────────────
