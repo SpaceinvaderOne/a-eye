@@ -48,8 +48,41 @@
                 </div>
                 <div class="form-group">
                     <label for="output_language">AI Output Language</label>
-                    <input type="text" id="output_language" data-current="{{ settings.output_language }}" value="{{ settings.output_language }}" placeholder="English">
-                    <small>Language for AI descriptions and tags. Leave blank for English.</small>
+                    <input type="text" id="output_language" list="output_language_list"
+                           data-current="{{ settings.output_language }}" value="{{ settings.output_language }}"
+                           placeholder="English">
+                    <datalist id="output_language_list">
+                        <option value="Arabic"></option>
+                        <option value="Chinese (Simplified)"></option>
+                        <option value="Chinese (Traditional)"></option>
+                        <option value="Czech"></option>
+                        <option value="Danish"></option>
+                        <option value="Dutch"></option>
+                        <option value="English"></option>
+                        <option value="Finnish"></option>
+                        <option value="French"></option>
+                        <option value="German"></option>
+                        <option value="Greek"></option>
+                        <option value="Hebrew"></option>
+                        <option value="Hindi"></option>
+                        <option value="Hungarian"></option>
+                        <option value="Indonesian"></option>
+                        <option value="Italian"></option>
+                        <option value="Japanese"></option>
+                        <option value="Korean"></option>
+                        <option value="Norwegian"></option>
+                        <option value="Polish"></option>
+                        <option value="Portuguese"></option>
+                        <option value="Romanian"></option>
+                        <option value="Russian"></option>
+                        <option value="Spanish"></option>
+                        <option value="Swedish"></option>
+                        <option value="Thai"></option>
+                        <option value="Turkish"></option>
+                        <option value="Ukrainian"></option>
+                        <option value="Vietnamese"></option>
+                    </datalist>
+                    <small>Language for AI descriptions and tags. Pick one from the list or type any language. Leave blank for English.</small>
                 </div>
             </div>
 
