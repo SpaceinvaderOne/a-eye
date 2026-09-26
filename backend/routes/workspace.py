@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from backend.database import count_images, get_image, list_images, update_image
 from backend.filename import ensure_unique
+from backend.preview import display_response, viewer_page
 from backend.thumbnails import get_or_create_thumbnail
 from backend.watcher import IMAGE_EXTENSIONS
 
@@ -165,7 +166,9 @@ async def workspace_thumbnail(request: Request, image_id: int):
 
 
 @router.get("/images/{image_id}/file")
-async def workspace_file(request: Request, image_id: int, download: bool = Query(False)):
+async def workspace_file(
+    request: Request, image_id: int, download: bool = Query(False), display: bool = Query(False)
+):
     ws = _get_workspace(request)
     image = await get_image(ws.db, image_id)
     if not image:
@@ -182,7 +185,19 @@ async def workspace_file(request: Request, image_id: int, download: bool = Query
             file_path, filename=safe_fn,
             headers={"Content-Disposition": f'attachment; filename="{safe_fn}"'},
         )
+    if display:
+        return await display_response(file_path)
     return FileResponse(file_path)
+
+
+@router.get("/images/{image_id}/viewer")
+async def workspace_viewer(request: Request, image_id: int):
+    """Full-size image viewer page for workspace images."""
+    ws = _get_workspace(request)
+    image = await get_image(ws.db, image_id)
+    if not image:
+        raise HTTPException(404, "Image not found")
+    return viewer_page(image, f"/api/workspace/images/{image_id}/file?display=true")
 
 
 # -- Actions ----------------------------------------------------------------

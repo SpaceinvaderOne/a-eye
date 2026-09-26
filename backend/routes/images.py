@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import csv
-import html
 import io
 import json
 import logging
@@ -29,6 +28,7 @@ from backend.database import (
     update_image,
 )
 from backend.filename import ensure_unique, sanitize_filename
+from backend.preview import display_response, viewer_page
 from backend.thumbnails import get_or_create_thumbnail
 from backend.xmp_writer import rename_xmp_sidecar
 
@@ -188,8 +188,10 @@ async def api_get_thumbnail(request: Request, image_id: int):
 
 
 @router.get("/images/{image_id}/file")
-async def api_get_file(request: Request, image_id: int, download: bool = Query(False)):
-    """Serve the original full-size image file."""
+async def api_get_file(
+    request: Request, image_id: int, download: bool = Query(False), display: bool = Query(False)
+):
+    """Serve the original file. With display=true, formats browsers can't show are converted to JPEG."""
     db = request.app.state.db
     settings = request.app.state.settings
     image = await get_image(db, image_id)
@@ -209,38 +211,19 @@ async def api_get_file(request: Request, image_id: int, download: bool = Query(F
             filename=safe_fn,
             headers={"Content-Disposition": f'attachment; filename="{safe_fn}"'},
         )
+    if display:
+        return await display_response(file_path)
     return FileResponse(file_path)
 
 
 @router.get("/images/{image_id}/viewer")
 async def api_image_viewer(request: Request, image_id: int):
-    """Lightweight full-size image viewer with close button."""
+    """Full-size image viewer page."""
     db = request.app.state.db
     image = await get_image(db, image_id)
     if not image:
         raise HTTPException(404, "Image not found")
-
-    filename = html.escape(image.get("current_filename") or image.get("original_filename") or "Image")
-    page = f"""<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{filename}</title>
-<style>
-body {{ margin:0; background:#000; display:flex; align-items:center; justify-content:center; min-height:100vh; }}
-img {{ max-width:100%; max-height:100vh; object-fit:contain; cursor:zoom-in; }}
-img.zoomed {{ max-width:none; max-height:none; cursor:zoom-out; }}
-.close {{ position:fixed; top:1rem; right:1rem; background:rgba(0,0,0,0.7); color:#fff; border:1px solid #555;
-  border-radius:4px; font-size:1.5rem; width:40px; height:40px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; z-index:10; }}
-.close:hover {{ background:rgba(255,255,255,0.2); }}
-</style>
-</head><body>
-<button class="close" onclick="window.close()" title="Close">&times;</button>
-<img src="/api/images/{image_id}/file" alt="{filename}" onclick="this.classList.toggle('zoomed')">
-<script>document.addEventListener('keydown',function(e){{ if(e.key==='Escape')window.close(); }});</script>
-</body></html>"""
-    return HTMLResponse(page)
+    return viewer_page(image, f"/api/images/{image_id}/file?display=true")
 
 
 # -- Processing --------------------------------------------------------------
