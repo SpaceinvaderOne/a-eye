@@ -1,15 +1,17 @@
-.git
-data/
-__pycache__/
-*.pyc
-.env
-.DS_Store
-*.db
-.venv/
-venv/
-.claude/
-reference/
-*.md
-a-eye.xml
+# Hidden files and directories
 .*
+
+# Markdown and screenshots are not needed at runtime
+*.md
 screenshots/
+
+# Python and runtime artefacts
+__pycache__/
+*.py[co]
+venv/
+data/
+*.db
+
+# Not part of the image
+reference/
+a-eye.xml

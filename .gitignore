@@ -1,36 +1,23 @@
+# Hidden files and directories
+.*
+!.gitignore
+!.dockerignore
+
+# Markdown except the README
+*.md
+!README.md
+
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[co]
 *.egg-info/
 dist/
 build/
-.venv/
 venv/
 
-# Environment
-.env
-
-# Data / runtime
+# Runtime
 data/
 *.db
-
-# macOS
-.DS_Store
-
-# Editors / IDEs
-.vscode/
-.idea/
-
-# Node (just in case)
-node_modules/
-
-# Claude Code
-.claude/
-CLAUDE.md
-
-# Internal docs
-overview.md
 
 # Old reference material
 reference/
