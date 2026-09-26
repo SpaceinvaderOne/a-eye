@@ -11,3 +11,5 @@ venv/
 reference/
 *.md
 a-eye.xml
+.*
+screenshots/
