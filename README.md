@@ -31,6 +31,9 @@
 - **Temporary workspace** — upload photos from any device, process them with AI, review the results, and download a zip. Great for triaging screenshots, phone dumps, or photos from someone else
 - **Catalogue-only mode** — mount your photos read-only and A-Eye automatically switches to non-destructive mode. All the AI analysis without touching your files
 - **Customisable AI prompts** — full prompt template editor with AI-assisted prompt creation. Tweak exactly what the vision model looks for and how it responds
+- **Output language** — have descriptions and tags written in the language of your choice. Leave it blank for English
+- **Processing controls** — stop and resume processing at any time, retry every errored photo in one click, and approve every proposed name across all pages at once. If the container restarts mid-run, A-Eye picks up where it left off
+- **HEIC and RAW in the browser** — the full-size viewer converts formats browsers can't display, so iPhone HEIC files and camera RAW files open in any browser. Downloads still give you the original file
 - **Database backup and restore** — one-click backup with library verification to check for missing or moved files. Restore from any previous backup
 - **Photo queue** — collect photos from across different pages and process them as a batch
 - **Destructive mode safety toggle** — delete and trash operations are locked behind a toggle that must be explicitly enabled in Settings, with confirmation dialogs on top
@@ -127,7 +130,7 @@ After installation, the **onboarding wizard** walks you through setup:
 
 1. **Connect to Ollama** — enter the URL of your Ollama instance and test the connection
 2. **Choose hardware mode** — tell A-Eye whether you're running on GPU or CPU so it can recommend the right model
-3. **Select a vision model** — pick from installed models or download the recommended one directly from the wizard
+3. **Select a vision model** — pick from installed models, type in a model name if yours isn't detected, or download the recommended one directly from the wizard
 4. **Pick your photos folder** — browse and confirm which directory to process
 
 Once onboarding is complete:
@@ -227,6 +230,7 @@ All settings are configurable through the web UI. They can also be set via envir
 | Ollama Host | `OLLAMA_HOST` | `http://localhost:11434` | URL of the Ollama instance |
 | Vision Model | `VISION_MODEL` | `minicpm-v` | Ollama vision model for photo analysis |
 | LLM Model | `LLM_MODEL` | *(empty)* | Optional text model for natural language search |
+| Output Language | `OUTPUT_LANGUAGE` | *(empty)* | Language for AI descriptions and tags. Leave blank for English |
 
 ### Authentication
 
@@ -271,7 +275,7 @@ All settings are configurable through the web UI. They can also be set via envir
 |---------|---------|---------|-------------|
 | Use EXIF Date | `USE_EXIF_DATE` | `true` | Include EXIF date in filenames |
 | Use GPS | `USE_GPS` | `true` | Reverse-geocode GPS coordinates for location names |
-| GPS Detail | `GPS_DETAIL` | `city` | Location detail level: `city`, `city-country`, `full`, or `coordinates` |
+| GPS Detail | `GPS_DETAIL` | `city` | Location detail level: `city`, `city-country`, `full` (city, state and country), or `coordinates` |
 
 ### Processing
 
