@@ -17,7 +17,7 @@ _MUTABLE_SETTINGS = {
     "rename_mode", "confidence_threshold", "filename_template",
     "max_filename_len", "filename_case", "use_exif_date", "use_gps",
     "gps_detail", "concurrent_workers", "watch_mode",
-    "vision_model", "llm_model", "ollama_host", "process_subdirs",
+    "vision_model", "llm_model", "output_language", "ollama_host", "process_subdirs",
     "thumbnail_max_size", "thumbnail_quality", "thumbnail_retain_days",
     "dry_run",
     "excluded_folders",

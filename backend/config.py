@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # -- Model Selection --
     vision_model: str = "minicpm-v"
     llm_model: str = ""  # Text model for search (optional)
+    output_language: str = ""
 
     # -- Paths --
     photos_dir: str = "/photos"

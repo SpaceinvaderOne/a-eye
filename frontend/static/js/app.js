@@ -41,7 +41,7 @@ function _esc(str) {
     if (!str) return '';
     var div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── Auth: Logout + 401 redirect ─────────────────────────────
@@ -162,6 +162,7 @@ function updateDashboard() {
             }
 
             // Toggle idle/active progress sections
+            const w = data.worker || {};
             const p = data.progress || {};
             var isActive = (stats.pending || 0) + (stats.processing || 0) > 0;
             var progressActive = document.getElementById('progress-active');
@@ -169,7 +170,7 @@ function updateDashboard() {
             if (progressActive) progressActive.style.display = isActive ? '' : 'none';
             if (progressIdle) progressIdle.style.display = isActive ? 'none' : '';
 
-            // Stop button visibility
+            // Stop / Resume button
             var stopBtn = document.getElementById('stop-processing-btn');
             if (stopBtn) {
                 var stopRequested = w.stop_requested || false;
@@ -177,14 +178,17 @@ function updateDashboard() {
                     stopBtn.style.display = 'none';
                     stopBtn.disabled = false;
                     stopBtn.textContent = 'Stop Processing';
+                    stopBtn.onclick = stopProcessing;
                 } else if (stopRequested) {
                     stopBtn.style.display = '';
-                    stopBtn.disabled = true;
-                    stopBtn.textContent = 'Stopping...';
+                    stopBtn.disabled = false;
+                    stopBtn.textContent = 'Resume Processing';
+                    stopBtn.onclick = resumeProcessing;
                 } else {
                     stopBtn.style.display = '';
                     stopBtn.disabled = false;
                     stopBtn.textContent = 'Stop Processing';
+                    stopBtn.onclick = stopProcessing;
                 }
             }
 
@@ -224,7 +228,6 @@ function updateDashboard() {
             updateScheduleStatus(data);
 
             // Update worker status
-            const w = data.worker || {};
             var workerLabel = w.running ? 'Active' : 'Stopped';
             if (w.paused) workerLabel = 'Paused (scheduled)';
             _setText('worker-running', workerLabel);
@@ -284,7 +287,7 @@ function _initShowcase() {
             var images = data.images || [];
             if (images.length === 0) {
                 grid.innerHTML = '<p class="showcase-empty">' +
-                    (tag ? "No photos with tag '" + tag + "'" : 'No processed photos yet') + '</p>';
+                    (tag ? "No photos with tag '" + _esc(tag) + "'" : 'No processed photos yet') + '</p>';
                 return;
             }
             grid.innerHTML = '';
@@ -505,26 +508,21 @@ function modelMatches(modelName, configValue) {
 }
 
 function populateModelDropdowns(data) {
-    const visionSelect = document.getElementById('vision_model');
     const llmSelect = document.getElementById('llm_model');
-    if (!visionSelect || !llmSelect) return;
+    if (!llmSelect) return;
 
-    const currentVision = visionSelect.dataset.current || '';
     const currentLlm = llmSelect.dataset.current || '';
     const visionModels = data.vision || [];
     const allModels = data.all || [];
 
-    // Vision dropdown: only vision-capable models
-    visionSelect.innerHTML = '';
-    if (visionModels.length === 0) {
-        visionSelect.innerHTML = '<option value="" disabled selected>No vision models found in Ollama</option>';
-    } else {
+    // Vision datalist: only vision-capable models, as suggestions for the text input
+    const visionList = document.getElementById('vision_model_list');
+    if (visionList) {
+        visionList.innerHTML = '';
         visionModels.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
-            opt.textContent = name;
-            if (modelMatches(name, currentVision)) opt.selected = true;
-            visionSelect.appendChild(opt);
+            visionList.appendChild(opt);
         });
     }
 
@@ -553,7 +551,6 @@ function _fetchAndPopulateModels(resultDiv, visionSelect) {
             const connected = data.ollama && data.ollama.connected;
             if (!connected) {
                 if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-error">Failed</span> <small>Could not reach Ollama</small>';
-                if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Could not reach Ollama</option>';
                 return;
             }
             if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-processing">Loading models...</span>';
@@ -573,7 +570,6 @@ function _fetchAndPopulateModels(resultDiv, visionSelect) {
         })
         .catch(() => {
             if (resultDiv) resultDiv.innerHTML = '<span class="badge badge-error">Failed</span> <small>Connection error</small>';
-            if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Connection error</option>';
         });
 }
 
@@ -582,7 +578,6 @@ function loadModels() {
     const visionSelect = document.getElementById('vision_model');
     if (!resultDiv) return;
     resultDiv.innerHTML = '<span class="badge badge-processing">Connecting...</span>';
-    if (visionSelect) visionSelect.innerHTML = '<option value="" disabled selected>Loading models...</option>';
     _fetchAndPopulateModels(resultDiv, visionSelect);
 }
 
@@ -2647,6 +2642,25 @@ function stopProcessing() {
         .catch(function() { showToast('Failed to stop processing', 'error'); });
 }
 
+function resumeProcessing() {
+    var btn = document.getElementById('stop-processing-btn');
+    if (btn) { btn.textContent = 'Resuming...'; btn.disabled = true; }
+    fetch('/api/scan/resume', { method: 'POST' })
+        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function() { showToast('Processing resumed'); updateDashboard(); })
+        .catch(function() { showToast('Failed to resume processing', 'error'); });
+}
+
+function retryAllErrors() {
+    fetch('/api/images/retry-all-errors', { method: 'POST' })
+        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(data) {
+            showToast('Retrying ' + (data.count || 0) + ' error image(s)');
+            setTimeout(function() { window.location.reload(); }, 600);
+        })
+        .catch(function() { showToast('Failed to retry errors', 'error'); });
+}
+
 // ── Settings: Processing Modes ──────────────────────────────
 
 function toggleCatalogueMode() {
@@ -2770,7 +2784,7 @@ function saveSettings() {
 
     const settings = {};
     const fields = [
-        'ollama_host', 'vision_model', 'llm_model',
+        'ollama_host', 'vision_model', 'llm_model', 'output_language',
         'catalogue_mode',
         'process_rename', 'process_write_description', 'process_write_tags',
         'filename_template', 'filename_case', 'max_filename_len',
@@ -3198,7 +3212,7 @@ function deleteBackup(filename) {
 function _escHtml(str) {
     var div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── Library Verification ─────────────────────────────────────
@@ -3260,12 +3274,14 @@ function cleanupOrphans(ids) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_ids: ids })
             })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                showToast(data.removed + ' orphaned records removed');
-                verifyLibrary(); // Re-run to refresh results
+            .then(function(r) {
+                return r.json().then(function(data) {
+                    if (!r.ok) throw new Error(data.detail || 'Cleanup failed');
+                    showToast(data.removed + ' orphaned records removed');
+                    verifyLibrary();
+                });
             })
-            .catch(function() { showToast('Cleanup failed', 'error'); });
+            .catch(function(err) { showToast(err.message || 'Cleanup failed', 'error'); });
         }, 'btn-warning');
 }
 

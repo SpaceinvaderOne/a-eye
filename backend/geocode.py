@@ -31,7 +31,6 @@ def reverse_geocode_location(
         info = results[0]
         city = info.get("city", "")
         country = info.get("country", "")
-        country_code = info.get("country_code", "")
 
         if detail == "city":
             return city or None
@@ -39,8 +38,8 @@ def reverse_geocode_location(
             parts = [p for p in (city, country) if p]
             return ", ".join(parts) or None
         elif detail == "full":
-            # reverse_geocode gives city + country; include country_code for extra context
-            parts = [p for p in (city, country, country_code) if p]
+            state = info.get("state", "")
+            parts = [p for p in (city, state, country) if p]
             return ", ".join(parts) or None
         else:
             return city or None

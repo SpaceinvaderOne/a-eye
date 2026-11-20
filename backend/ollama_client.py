@@ -25,6 +25,9 @@ _DEFAULT_TIMEOUT = 30.0
 _VISION_MAX_PX = 1280
 _VISION_JPEG_QUALITY = 85
 
+# Name substrings used to guess vision capability when /api/show fails.
+_VISION_NAME_HINTS = ("llava", "minicpm-v", "moondream", "bakllava", "-vl", "vl:", "vision")
+
 
 class OllamaClient:
     """Async wrapper for the Ollama HTTP API."""
@@ -67,8 +70,8 @@ class OllamaClient:
             logger.warning("Failed to list Ollama models", exc_info=True)
             return []
 
-    async def get_model_capabilities(self, model_name: str) -> list[str]:
-        """Fetch capabilities for a single model via /api/show."""
+    async def get_model_capabilities(self, model_name: str) -> list[str] | None:
+        """Fetch capabilities for a single model via /api/show. None = query failed."""
         try:
             resp = await self._client.post(
                 f"{self.host}/api/show",
@@ -77,8 +80,8 @@ class OllamaClient:
             resp.raise_for_status()
             return resp.json().get("capabilities", [])
         except httpx.HTTPError:
-            logger.debug("Failed to get capabilities for %s", model_name)
-            return []
+            logger.warning("Capability query failed for model %s", model_name, exc_info=True)
+            return None
 
     async def list_models_by_capability(self) -> dict[str, list[str]]:
         """Return models grouped into vision-capable and text-only lists."""
@@ -95,7 +98,13 @@ class OllamaClient:
         vision = []
         text = []
         for name, model_caps in zip(names, caps):
-            if "vision" in model_caps:
+            if model_caps is None:
+                if any(h in name.lower() for h in _VISION_NAME_HINTS):
+                    logger.warning("Using name-based vision detection for %s", name)
+                    vision.append(name)
+                else:
+                    text.append(name)
+            elif "vision" in model_caps:
                 vision.append(name)
             else:
                 text.append(name)
@@ -149,12 +158,25 @@ class OllamaClient:
         if options:
             payload["options"] = options
 
-        resp = await self._client.post(
-            f"{self.host}/api/generate",
-            json=payload,
-            timeout=_GENERATE_TIMEOUT,
-        )
-        resp.raise_for_status()
+        try:
+            resp = await self._client.post(
+                f"{self.host}/api/generate",
+                json=payload,
+                timeout=_GENERATE_TIMEOUT,
+            )
+        except httpx.TimeoutException:
+            raise RuntimeError(
+                f"Ollama timed out after {int(_GENERATE_TIMEOUT)}s — "
+                "the model may still be loading or the GPU may be busy"
+            )
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Ollama connection error: {exc.__class__.__name__}: {exc}")
+        if resp.status_code >= 400:
+            try:
+                detail = resp.json().get("error", "") or resp.text[:300]
+            except Exception:
+                detail = resp.text[:300]
+            raise RuntimeError(f"Ollama error ({resp.status_code}): {detail}")
         data = resp.json()
         return data.get("response", "").strip()
 
@@ -166,6 +188,7 @@ class OllamaClient:
         metadata: dict[str, Any],
         include_tags: bool = False,
         processing_context: str | None = None,
+        output_language: str = "",
     ) -> tuple[str, str, list[str], list[str]]:
         """Single-model mode: vision model produces description, filename, tags, and quality flags.
 
@@ -184,6 +207,7 @@ class OllamaClient:
             metadata_text=meta_lines,
             include_tags=include_tags,
             processing_context=processing_context,
+            output_language=output_language,
         )
 
         image_b64 = _encode_image(image_path)

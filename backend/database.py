@@ -79,7 +79,7 @@ async def init_db(db_path: str) -> aiosqlite.Connection:
     await db.commit()
 
     # Schema migrations — add columns that may not exist yet
-    for col, typedef in [("ai_tags", "TEXT"), ("sidecar_path", "TEXT"), ("quality_flags", "TEXT"), ("processing_context", "TEXT"), ("in_queue", "INTEGER DEFAULT 0")]:
+    for col, typedef in [("ai_tags", "TEXT"), ("sidecar_path", "TEXT"), ("quality_flags", "TEXT"), ("processing_context", "TEXT"), ("in_queue", "INTEGER DEFAULT 0"), ("retry_count", "INTEGER DEFAULT 0")]:
         try:
             await db.execute(f"ALTER TABLE images ADD COLUMN {col} {typedef}")
         except Exception:
@@ -88,6 +88,56 @@ async def init_db(db_path: str) -> aiosqlite.Connection:
 
     logger.info("Database initialized at %s", db_path)
     return db
+
+
+async def recover_stuck_images(db: aiosqlite.Connection, max_retries: int = 3) -> tuple[int, int]:
+    """Reset images stuck in 'processing' after a crash.
+
+    Images under the retry limit are reset to 'pending' with retry_count
+    incremented.  Images at/over the limit are moved to 'error'.
+
+    Returns (recovered_count, failed_count).
+    """
+    # Count before we modify anything
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM images WHERE status = 'processing' AND retry_count < ?",
+        (max_retries,),
+    )
+    recovered = (await cursor.fetchone())[0]
+
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM images WHERE status = 'processing' AND retry_count >= ?",
+        (max_retries,),
+    )
+    failed = (await cursor.fetchone())[0]
+
+    if recovered:
+        await db.execute(
+            "UPDATE images SET status = 'pending', retry_count = retry_count + 1 "
+            "WHERE status = 'processing' AND retry_count < ?",
+            (max_retries,),
+        )
+
+    if failed:
+        await db.execute(
+            "UPDATE images SET status = 'error', error_message = ? "
+            "WHERE status = 'processing' AND retry_count >= ?",
+            (f"Failed after {max_retries} recovery attempts", max_retries),
+        )
+
+    if recovered or failed:
+        await db.commit()
+
+    return recovered, failed
+
+
+async def get_pending_image_ids(db: aiosqlite.Connection) -> list[int]:
+    """Get IDs of all images with status='pending', oldest first."""
+    cursor = await db.execute(
+        "SELECT id FROM images WHERE status = 'pending' ORDER BY created_at",
+    )
+    rows = await cursor.fetchall()
+    return [row[0] for row in rows]
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +179,7 @@ _ALLOWED_COLUMNS = frozenset({
     "vision_description", "llm_filename", "final_filename", "confidence_score",
     "status", "error_message", "created_at", "processed_at", "renamed_at",
     "ai_tags", "sidecar_path", "quality_flags", "processing_context", "in_queue",
+    "retry_count",
 })
 
 

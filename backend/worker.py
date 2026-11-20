@@ -186,6 +186,14 @@ class WorkerQueue:
             logger.warning("Worker %d: image %d not found in DB", worker_id, image_id)
             return
 
+        # Guard against double-processing (e.g. duplicate enqueue)
+        if image["status"] != "pending":
+            logger.debug(
+                "Worker %d: image %d not in status 'pending' (was '%s'), skipping",
+                worker_id, image_id, image["status"],
+            )
+            return
+
         photos_dir = Path(self.settings.photos_dir)
         file_path = (photos_dir / image["file_path"]).resolve()
         # Verify the file is within the photos directory
@@ -302,7 +310,8 @@ class WorkerQueue:
                     image_path=current_file,
                     description=result.vision_description if want_desc else None,
                     tags=result.ai_tags if want_tags else None,
-                    date=image_refreshed.get("exif_date"),
+                    date=(result.metadata.datetime_full if result.metadata else None)
+                    or image_refreshed.get("exif_date"),
                 )
                 sidecar_relative = str(sidecar.relative_to(photos_dir))
                 await update_image(self.db, image_id, sidecar_path=sidecar_relative)
