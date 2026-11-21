@@ -1,4 +1,5 @@
 """Prompt library — CRUD, rendering, validation, and export for customisable prompts."""
+
 from __future__ import annotations
 
 import logging
@@ -30,13 +31,7 @@ Rules for the filename:
 
 {{format_instructions}}"""
 
-DEFAULT_CONTEXT_TEMPLATE = """\
-USER CONTEXT (from the photographer): {{user_context}}
-IMPORTANT: You MUST incorporate this context into your description and filename. \
-If the context names a subject, use that name (e.g. 'Shadow' not 'a dog'). \
-If the context names an event or occasion, include it (e.g. 'Sams wedding' → 'sams-wedding-ceremony'). \
-If the context names a location, include it (e.g. 'holiday in Crete' → 'crete-beach-sunset'). \
-Only ignore context that is clearly about a completely different subject."""
+DEFAULT_CONTEXT_TEMPLATE = """{{user_context}}"""
 
 # Stage constants
 STAGE_VISION = "vision"
@@ -217,6 +212,7 @@ A-Eye's Settings → Prompt Library → expand "Context Injection Template" → 
 # Startup — ensure default prompts exist
 # ---------------------------------------------------------------------------
 
+
 async def ensure_defaults(db: aiosqlite.Connection) -> None:
     """Insert default prompts if the prompts table is empty. Called on startup."""
     cursor = await db.execute("SELECT COUNT(*) FROM prompts")
@@ -242,6 +238,7 @@ async def ensure_defaults(db: aiosqlite.Connection) -> None:
 # CRUD
 # ---------------------------------------------------------------------------
 
+
 async def get_active_prompt(db: aiosqlite.Connection, stage: str) -> dict | None:
     """Get the active prompt for a stage. Falls back to default if none active."""
     cursor = await db.execute(
@@ -259,7 +256,9 @@ async def get_active_prompt(db: aiosqlite.Connection, stage: str) -> dict | None
     return dict(row) if row else None
 
 
-async def list_prompts(db: aiosqlite.Connection, stage: str | None = None) -> list[dict]:
+async def list_prompts(
+    db: aiosqlite.Connection, stage: str | None = None
+) -> list[dict]:
     """List all prompts, optionally filtered by stage."""
     if stage:
         cursor = await db.execute(
@@ -302,7 +301,10 @@ async def create_prompt(
 
 
 async def update_prompt(
-    db: aiosqlite.Connection, prompt_id: int, name: str | None = None, content: str | None = None
+    db: aiosqlite.Connection,
+    prompt_id: int,
+    name: str | None = None,
+    content: str | None = None,
 ) -> None:
     """Update a custom prompt. Rejects updates to defaults."""
     prompt = await get_prompt(db, prompt_id)
@@ -351,13 +353,9 @@ async def set_active(db: aiosqlite.Connection, prompt_id: int) -> None:
     stage = prompt["stage"]
 
     # Deactivate all prompts for this stage
-    await db.execute(
-        "UPDATE prompts SET is_active = 0 WHERE stage = ?", (stage,)
-    )
+    await db.execute("UPDATE prompts SET is_active = 0 WHERE stage = ?", (stage,))
     # Activate the chosen one
-    await db.execute(
-        "UPDATE prompts SET is_active = 1 WHERE id = ?", (prompt_id,)
-    )
+    await db.execute("UPDATE prompts SET is_active = 1 WHERE id = ?", (prompt_id,))
     await db.commit()
     logger.info("Activated prompt %d for stage %s", prompt_id, stage)
 
@@ -365,6 +363,7 @@ async def set_active(db: aiosqlite.Connection, prompt_id: int) -> None:
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
+
 
 def validate_prompt(stage: str, content: str) -> list[str]:
     """Validate template has required variables. Returns list of errors (empty = valid)."""
@@ -379,6 +378,7 @@ def validate_prompt(stage: str, content: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Rendering
 # ---------------------------------------------------------------------------
+
 
 def render_vision_prompt(
     template: str,
@@ -414,7 +414,9 @@ def render_vision_prompt(
     if context_section:
         visible_rule = "- Describe what is in the photo, incorporating any user-provided context (names, events, locations)\n"
     else:
-        visible_rule = "- Describe only what is VISIBLE in the photo (subject, action, setting)\n"
+        visible_rule = (
+            "- Describe only what is VISIBLE in the photo (subject, action, setting)\n"
+        )
 
     # Tags step
     tags_step = "3. List 5-15 descriptive keyword tags.\n" if include_tags else ""
@@ -425,7 +427,11 @@ def render_vision_prompt(
 
     # Format instructions
     line_count = 4 if include_tags else 3
-    tags_line = "\nTAGS: <comma-separated keywords, 5-15 descriptive tags>" if include_tags else ""
+    tags_line = (
+        "\nTAGS: <comma-separated keywords, 5-15 descriptive tags>"
+        if include_tags
+        else ""
+    )
     format_instructions = (
         f"Reply in EXACTLY this format ({line_count} lines, nothing else):\n"
         "DESCRIPTION: <your one-sentence description>\n"
@@ -447,7 +453,9 @@ def render_vision_prompt(
     if "DESCRIPTION:" not in rendered or "FILENAME:" not in rendered:
         rendered = rendered.rstrip() + "\n\n" + format_instructions
 
-    lang = output_language.strip().splitlines()[0][:60] if output_language.strip() else ""
+    lang = (
+        output_language.strip().splitlines()[0][:60] if output_language.strip() else ""
+    )
     if lang and lang.lower() != "english":
         rendered += f"\nWrite the DESCRIPTION and TAGS in {lang}."
 
@@ -458,9 +466,14 @@ def render_vision_prompt(
 # Export
 # ---------------------------------------------------------------------------
 
+
 def export_as_markdown(prompt: dict) -> str:
     """Format a prompt as shareable markdown with metadata header."""
-    stage_label = "Vision Prompt" if prompt["stage"] == STAGE_VISION else "Context Injection Template"
+    stage_label = (
+        "Vision Prompt"
+        if prompt["stage"] == STAGE_VISION
+        else "Context Injection Template"
+    )
     created = prompt.get("created_at", "")
     if created:
         # Trim to date only
@@ -474,5 +487,5 @@ def export_as_markdown(prompt: dict) -> str:
         f"---\n\n"
         f"{prompt['content']}\n\n"
         f"---\n\n"
-        f"*Exported from A-Eye. Paste into the \"Add Prompt\" form to import.*\n"
+        f'*Exported from A-Eye. Paste into the "Add Prompt" form to import.*\n'
     )
